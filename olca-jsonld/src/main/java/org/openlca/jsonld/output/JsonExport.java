@@ -11,8 +11,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import org.openlca.core.database.FileStore;
 import org.openlca.core.database.IDatabase;
 import org.openlca.core.model.Actor;
-import org.openlca.core.model.LoginCallback;
-import org.openlca.core.model.LoginCallback.Message;
+import org.openlca.core.model.Callback;
+import org.openlca.core.model.Callback.Message;
 import org.openlca.core.model.Category;
 import org.openlca.core.model.Currency;
 import org.openlca.core.model.DQSystem;
@@ -51,7 +51,7 @@ public class JsonExport {
 		write(entity, null);
 	}
 
-	public <T extends RootEntity> void write(T entity, LoginCallback cb) {
+	public <T extends RootEntity> void write(T entity, Callback cb) {
 		if (entity == null)
 			return;
 		ModelType type = ModelType.forModelClass(entity.getClass());
@@ -82,14 +82,14 @@ public class JsonExport {
 		}
 	}
 
-	private void warn(LoginCallback cb, String message, RootEntity entity) {
+	private void warn(Callback cb, String message, RootEntity entity) {
 		if (cb == null)
 			return;
 		cb.apply(Message.warn(message), entity);
 	}
 
 	private void writeExternalFiles(RootEntity entity, ModelType type,
-			LoginCallback cb) {
+			Callback cb) {
 		if (entity == null || conf.db == null
 				|| conf.db.getFileStorageLocation() == null
 				|| conf.store == null)

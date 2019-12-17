@@ -5,7 +5,7 @@ package org.openlca.core.model;
  * imports and exports.
  */
 @FunctionalInterface
-public interface LoginCallback {
+public interface Callback {
 
 	/**
 	 * Executes the callback function. This function follows the error-first
