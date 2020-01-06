@@ -6,6 +6,7 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -29,6 +30,7 @@ import org.slf4j.LoggerFactory;
  */
 public class PostgresDatabase extends Notifiable implements IDatabase {
 
+	private static final String POSTGRES_DB = "postgres";
 	private static Logger log = LoggerFactory.getLogger(PostgresDatabase.class);
 	private EntityManagerFactory entityFactory;
 	private PostgresConnParams connParams;
@@ -135,7 +137,7 @@ public class PostgresDatabase extends Notifiable implements IDatabase {
 	}
 
 	public static void dropDatabase(PostgresConnParams connParams) throws Exception {
-		PostgresConnParams postgresDbParams = connParams.clone().setDbName("postgres");
+		PostgresConnParams postgresDbParams = connParams.clone().setDbName(POSTGRES_DB);
 		PostgresDatabase postgresDb = new PostgresDatabase(postgresDbParams);
 		postgresDb.setAutoCommit(true);
 
@@ -180,7 +182,7 @@ public class PostgresDatabase extends Notifiable implements IDatabase {
 	public static boolean databaseExists(PostgresConnParams connParams) throws Exception {
 		log.trace("Checking if database exists {}", connParams);
 
-		PostgresConnParams postgresDbParams = connParams.clone().setDbName("postgres");
+		PostgresConnParams postgresDbParams = connParams.clone().setDbName(POSTGRES_DB);
 		IDatabase postgresDb = new PostgresDatabase(postgresDbParams);
 
 		String query = String
@@ -199,6 +201,27 @@ public class PostgresDatabase extends Notifiable implements IDatabase {
 
 		postgresDb.close();
 		return databaseExists.get();
+	}
+
+	public static ArrayList<String> listDatabases(PostgresConnParams connParams) throws Exception {
+
+		PostgresConnParams postgresDbParams = connParams.clone().setDbName(POSTGRES_DB);
+		IDatabase postgresDb = new PostgresDatabase(postgresDbParams);
+		ArrayList<String> db_names = new ArrayList<>();
+		String query = "SELECT datname FROM pg_database ";
+		try {
+			NativeSql.on(postgresDb).query(query, result -> {
+				db_names.add(result.getString("datname"));
+				return true;
+			});
+		} catch (Exception e) {
+			log.error("Error while checking if database " + connParams.getDbName() + " exists", e);
+	        postgresDb.close();
+			throw e;
+		}
+
+		postgresDb.close();
+		return db_names;
 	}
 
 	@Override
