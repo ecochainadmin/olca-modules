@@ -95,6 +95,7 @@ class ImpactMethodImport {
 			ImpactMethod destMethod) {
 		for (NwSet srcNwSet : srcMethod.nwSets) {
 			for (NwSet destNwSet : destMethod.nwSets) {
+				log.trace("Comparing {} with {}: {}", srcNwSet, destNwSet, areEqual(srcNwSet, destNwSet))
 				if (areEqual(srcNwSet, destNwSet)) {
 					destNwSet.refId = srcNwSet.refId;
 					break;
