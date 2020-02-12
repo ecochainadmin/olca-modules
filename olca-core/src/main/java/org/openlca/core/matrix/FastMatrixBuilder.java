@@ -7,13 +7,13 @@ import org.openlca.core.database.NativeSql;
 import org.openlca.core.database.ProcessDao;
 import org.openlca.core.math.CalculationSetup;
 import org.openlca.core.math.DataStructures;
-import org.openlca.core.math.ReferenceAmount;
 import org.openlca.core.matrix.cache.ExchangeTable;
 import org.openlca.core.matrix.cache.FlowTable;
 import org.openlca.core.matrix.cache.MatrixCache;
 import org.openlca.core.matrix.format.MatrixBuilder;
 import org.openlca.core.model.AllocationMethod;
 import org.openlca.core.model.FlowType;
+import org.openlca.core.model.descriptors.FlowDescriptor;
 import org.openlca.core.model.descriptors.ProcessDescriptor;
 import org.openlca.expressions.FormulaInterpreter;
 import org.openlca.julia.JuliaSolver;
@@ -89,6 +89,7 @@ public class FastMatrixBuilder {
 		data.enviIndex = flowIndex;
 		data.techMatrix = techBuilder.finish();
 		data.enviMatrix = enviBuilder.finish();
+		data.costVector = costs;
 
 		// add LCIA matrices
 		// TODO: we should remove the solver
@@ -123,7 +124,6 @@ public class FastMatrixBuilder {
 			// the reference product or waste flow
 			int idx = techIndex.getIndex(provider);
 			add(idx, provider, techBuilder, e);
-			return;
 		}
 	}
 
@@ -135,9 +135,8 @@ public class FastMatrixBuilder {
 		if (provider == null) {
 			if (providers == null) {
 				providers = new TLongObjectHashMap<>();
-				techIndex.each((i, pp) -> {
-					providers.put(pp.flowId(), pp);
-				});
+				techIndex.each(
+						(i, pp) -> providers.put(pp.flowId(), pp));
 			}
 			provider = providers.get(e.flowId);
 		}
@@ -160,7 +159,7 @@ public class FastMatrixBuilder {
 	}
 
 	private void add(int row, ProcessProduct provider, MatrixBuilder matrix,
-			CalcExchange exchange) {
+					 CalcExchange exchange) {
 		int col = techIndex.getIndex(provider);
 		if (row < 0 || col < 0)
 			return;
@@ -183,7 +182,7 @@ public class FastMatrixBuilder {
 				setup.productSystem.referenceProcess,
 				setup.productSystem.referenceExchange.flow);
 		TechIndex idx = new TechIndex(qref);
-		idx.setDemand(ReferenceAmount.get(setup));
+		idx.setDemand(setup.getDemandValue());
 
 		TLongObjectHashMap<ProcessDescriptor> processes = new ProcessDao(
 				db).descriptorMap();
@@ -201,9 +200,15 @@ public class FastMatrixBuilder {
 				if (!isInput && type == FlowType.WASTE_FLOW)
 					return true;
 				long procID = r.getLong(1);
-				ProcessProduct pp = ProcessProduct.of(
-						processes.get(procID), flows.get(flowID));
-				idx.put(pp);
+				ProcessDescriptor process = processes.get(procID);
+				FlowDescriptor flow = flows.get(flowID);
+				if (process == null || flow == null) {
+					// note that product system results could be
+					// stored in the exchanges table; in this
+					// case the process would be null.
+					return true;
+				}
+				idx.put(ProcessProduct.of(process, flow));
 				return true;
 			});
 		} catch (Exception e) {

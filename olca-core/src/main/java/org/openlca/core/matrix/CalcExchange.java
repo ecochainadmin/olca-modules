@@ -89,16 +89,14 @@ public class CalcExchange {
 		}
 
 		a *= (conversionFactor * allocationFactor);
-		if (!isAvoided) {
-			return isInput ? -a : a;
-		} else {
+		if (isAvoided) {
 			// avoided product or waste flows
 			if (flowType == FlowType.PRODUCT_FLOW)
 				return a;
 			if (flowType == FlowType.WASTE_FLOW)
 				return -a;
-			return isInput ? -a : a;
 		}
+		return isInput ? -a : a;
 	}
 
 	public double costValue(
@@ -106,7 +104,7 @@ public class CalcExchange {
 			double allocationFactor) {
 
 		double c = costValue;
-		if (costFormula != null && interpreter != null) {
+		if (Strings.notEmpty(costFormula) && interpreter != null) {
 			try {
 				Scope scope = interpreter.getScope(processId);
 				if (scope == null) {

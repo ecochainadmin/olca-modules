@@ -87,17 +87,29 @@ public class CalculationSetup {
 		this.amount = amount;
 	}
 
+	/** Get the target amount in the unit of this calculation setup. */
 	public double getAmount() {
-		if (amount != null)
-			return amount;
-		double refAmount = productSystem.targetAmount;
+		return amount != null
+				? amount
+				: productSystem.targetAmount;
+	}
+
+	/**
+	 * Get the value for the demand vector for the quantitative reference defined by
+	 * this calculation setup. Note that this value is negative for waste treatment
+	 * systems and that it is given in the reference unit of the reference flow.
+	 */
+	public double getDemandValue() {
+		double a = amount != null
+				? amount
+				: productSystem.targetAmount;
+		a = ReferenceAmount.get(a, getUnit(), getFlowPropertyFactor());
 		if (productSystem.referenceExchange == null)
-			return refAmount;
+			return a;
 		Flow flow = productSystem.referenceExchange.flow;
 		if (flow != null && flow.flowType == FlowType.WASTE_FLOW) {
-			// negative reference amount for waste treatment processes
-			return -refAmount;
+			return -a;
 		}
-		return refAmount;
+		return a;
 	}
 }

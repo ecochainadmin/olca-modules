@@ -2,7 +2,6 @@ package org.openlca.core.math;
 
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import org.openlca.core.database.FlowDao;
 import org.openlca.core.database.IDatabase;
@@ -106,6 +105,7 @@ public class DataStructures {
 
 		IDatabase db = mcache.getDatabase();
 		TechIndex techIndex = createProductIndex(setup.productSystem, db);
+		techIndex.setDemand(setup.getDemandValue());
 		FormulaInterpreter interpreter = interpreter(
 				db, setup, techIndex);
 
@@ -128,23 +128,18 @@ public class DataStructures {
 		return data;
 	}
 
-	public static Set<Long> parameterContexts(
-			CalculationSetup setup,
-			TechIndex techIndex) {
-		HashSet<Long> set = new HashSet<>();
-		if (setup != null && setup.impactMethod != null) {
-			set.add(setup.impactMethod.id);
-		}
-		if (techIndex != null) {
-			set.addAll(techIndex.getProcessIds());
-		}
-		return set;
-	}
-
 	public static FormulaInterpreter interpreter(IDatabase db,
 			CalculationSetup setup, TechIndex techIndex) {
-		return ParameterTable.interpreter(db,
-				parameterContexts(setup, techIndex),
-				setup.parameterRedefs);
+		// collect the process and LCIA method IDs; these
+		// are the possible contexts of local parameters
+		HashSet<Long> contexts = new HashSet<>();
+		if (setup != null && setup.impactMethod != null) {
+			contexts.add(setup.impactMethod.id);
+		}
+		if (techIndex != null) {
+			contexts.addAll(techIndex.getProcessIds());
+		}
+		return ParameterTable.interpreter(
+				db, contexts, setup.parameterRedefs);
 	}
 }
