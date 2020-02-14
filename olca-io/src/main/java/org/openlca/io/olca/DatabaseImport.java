@@ -58,6 +58,7 @@ public class DatabaseImport implements Runnable {
 		updateUnitGroups(requirePropertyUpdate, seq);
 	}
 
+
 	/**
 	 * Set the default flow properties in the given unit groups.
 	 */
